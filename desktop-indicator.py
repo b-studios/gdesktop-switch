@@ -38,8 +38,11 @@ class DesktopSwitcher:
         self.ind.set_menu(self.menu)                
         
         # now find current desktop link and name it
-        current = [d for d in self.desktops if d.get('path') == os.readlink(DESKTOP_DIR)][0]
-        self.ind.set_label(current.get('name'))
+        if os.path.exists(DESKTOP_DIR):
+            current = [d for d in self.desktops if d.get('path') == os.readlink(DESKTOP_DIR)][0]
+            self.ind.set_label(current.get('name'))
+        else:
+            self.ind.set_label('Select Desktop...')
         
     def add_desktops(self):
         sym_links = os.listdir(AVAILABLE_DESKTOPS)
@@ -58,11 +61,14 @@ class DesktopSwitcher:
     
     def change_desktop(self, widget, name, path):
         # there must be something wrong - this will throw on OSError if no link is provided
-        if not os.readlink(DESKTOP_DIR):
+        if os.path.exists(DESKTOP_DIR) and not os.readlink(DESKTOP_DIR):
           return
-        
-        # remove old link and create new one (could not find a -force flag for os.symlink)
-        os.remove(DESKTOP_DIR)
+          
+        # remove old link
+        if os.path.exists(DESKTOP_DIR):
+          os.remove(DESKTOP_DIR)
+          
+        # create new link (could not find a -force flag for os.symlink)
         os.symlink(path, DESKTOP_DIR)
         pynotify.Notification(name, "Changed Desktop to " + path + ".\n Please refresh by pressing F5").show()
         self.ind.set_label(name)
